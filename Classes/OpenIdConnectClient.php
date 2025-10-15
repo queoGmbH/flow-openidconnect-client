@@ -125,7 +125,7 @@ final class OpenIdConnectClient
         }
         $this->options = Arrays::arrayMergeRecursiveOverrule(self::DEFAULT_OPTIONS, $this->settings['services'][$this->serviceName]['options']);
         if (isset($this->options['discoveryUri'])) {
-            $this->amendOptionsWithDiscovery($this->options['discoveryUri']);
+            $this->amendOptionsWithDiscovery($this->options['discoveryUri'], $this->options['discoveryMapping'] ?? []);
         }
         if (empty($this->options['jwksUri'])) {
             throw new ConfigurationException(sprintf('OpenID Connect Client: Option "discoveryUri" or "jwksUri" has to be configured for service "%s".', $this->serviceName), 1554968498);
@@ -340,7 +340,7 @@ final class OpenIdConnectClient
      * @throws ConnectionException
      * @throws CacheException
      */
-    private function amendOptionsWithDiscovery(string $discoveryUri): void
+    private function amendOptionsWithDiscovery(string $discoveryUri, array $mapping = []): void
     {
         $cacheIdentifier = md5('options:' . $discoveryUri);
         $discoveredOptions = $this->discoveryCache->get($cacheIdentifier);
@@ -358,9 +358,11 @@ final class OpenIdConnectClient
             $this->logger->info(sprintf('OpenID Connect Client: Auto-discovery via %s succeeded and stored into cache.', $discoveryUri), LogEnvironment::fromMethodName(__METHOD__));
         }
 
+        // only allow mapped options to be amended
+        $mapping = array_merge(self::DISCOVERY_OPTIONS_MAPPING, $mapping);
         foreach ($discoveredOptions as $optionName => $optionValue) {
-            if (isset(self::DISCOVERY_OPTIONS_MAPPING[$optionName])) {
-                $this->options[self::DISCOVERY_OPTIONS_MAPPING[$optionName]] = $optionValue;
+            if (isset($mapping[$optionName])) {
+                $this->options[$mapping[$optionName]] = $optionValue;
             }
         }
     }
