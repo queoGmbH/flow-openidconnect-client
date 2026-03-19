@@ -328,7 +328,7 @@ final class OpenIdConnectClient
         }
 
         try {
-            $result = new TokenSet(IdentityToken::fromJwt($response['id_token']), '');
+            $result = new TokenSet(IdentityToken::fromJwt($response['id_token']), $response['refresh_token'] ?? '');
         } catch (\InvalidArgumentException $e) {
             throw new ServiceException(sprintf('OpenID Connect Client: Could not  construct identity token from response data while refreshing identity token from %s', $tokenEndpoint), 1741271679, $e);
         }
