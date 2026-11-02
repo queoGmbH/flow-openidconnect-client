@@ -200,6 +200,29 @@ class OpenIdConnectClientTest extends TestCase
         static::assertSame($expectedAccessToken->getExpires(), $actualAccessToken->getExpires());
     }
 
+    public static function authorizationScopeDataProvider(): \Generator
+    {
+        yield 'empty scope only requests openid' => ['', 'openid'];
+        yield 'openid is appended when missing' => ['email profile', 'email profile openid'];
+        yield 'openid is not duplicated' => ['openid', 'openid'];
+        yield 'configured offline_access is kept' => ['openid offline_access', 'openid offline_access'];
+        yield 'offline_access is not added on its own' => ['openid email', 'openid email'];
+        yield 'superfluous whitespace is ignored' => ['  openid   email ', 'openid email'];
+    }
+
+    /**
+     * @test
+     * @dataProvider authorizationScopeDataProvider
+     * @throws
+     */
+    public function buildAuthorizationScopeRequestsOnlyConfiguredScopesAndOpenid(string $scope, string $expectedScope): void
+    {
+        $method = new \ReflectionMethod($this->oidcClient, 'buildAuthorizationScope');
+        $method->setAccessible(true);
+
+        static::assertSame($expectedScope, $method->invoke($this->oidcClient, $scope));
+    }
+
     /**
      * Injects $dependency into property $name of $target
      *
